@@ -32,7 +32,7 @@ class BestCheckpointSaver(object):
         self._save_dir = save_dir
         self._save_path = os.path.join(save_dir, 'model')
         self._maximize = maximize
-        self._saver = saver if saver else tf.train.Saver(
+        self._saver = saver if saver else tf.compat.v1.train.Saver(
             max_to_keep=None,
             save_relative_paths=True
         )

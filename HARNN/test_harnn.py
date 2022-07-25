@@ -10,10 +10,12 @@ import numpy as np
 sys.path.append('../')
 logging.getLogger('tensorflow').disabled = True
 
-import tensorflow as tf
-from utils import checkmate as cm
-from utils import data_helpers as dh
-from utils import param_parser as parser
+#import tensorflow as tf
+import tensorflow.compat.v1 as tf
+tf.disable_v2_behavior()
+import checkmate as cm
+import data_helpers as dh
+import param_parser as parser
 from sklearn.metrics import precision_score, recall_score, f1_score, roc_auc_score, average_precision_score
 
 args = parser.parameter_parser()
@@ -26,8 +28,7 @@ SAVE_DIR = 'output/' + MODEL
 
 
 def create_input_data(data: dict):
-    return zip(data['pad_seqs'], data['section'], data['subsection'], data['group'],
-               data['subgroup'], data['onehot_labels'], data['labels'])
+    return zip(data['pad_seqs'], data['section'], data['subsection'], data['onehot_labels'], data['labels'])
 
 
 def test_harnn():
@@ -55,11 +56,11 @@ def test_harnn():
 
     graph = tf.Graph()
     with graph.as_default():
-        session_conf = tf.ConfigProto(
+        session_conf = tf.compat.v1.ConfigProto(
             allow_soft_placement=args.allow_soft_placement,
             log_device_placement=args.log_device_placement)
         session_conf.gpu_options.allow_growth = args.gpu_options_allow_growth
-        sess = tf.Session(config=session_conf)
+        sess = tf.compat.v1.Session(config=session_conf)
         with sess.as_default():
             # Load the saved meta graph and restore variables
             saver = tf.train.import_meta_graph("{0}.meta".format(checkpoint_file))
@@ -69,8 +70,6 @@ def test_harnn():
             input_x = graph.get_operation_by_name("input_x").outputs[0]
             input_y_first = graph.get_operation_by_name("input_y_first").outputs[0]
             input_y_second = graph.get_operation_by_name("input_y_second").outputs[0]
-            input_y_third = graph.get_operation_by_name("input_y_third").outputs[0]
-            input_y_fourth = graph.get_operation_by_name("input_y_fourth").outputs[0]
             input_y = graph.get_operation_by_name("input_y").outputs[0]
             dropout_keep_prob = graph.get_operation_by_name("dropout_keep_prob").outputs[0]
             alpha = graph.get_operation_by_name("alpha").outputs[0]
@@ -79,12 +78,10 @@ def test_harnn():
             # Tensors we want to evaluate
             first_scores = graph.get_operation_by_name("first-output/scores").outputs[0]
             second_scores = graph.get_operation_by_name("second-output/scores").outputs[0]
-            third_scores = graph.get_operation_by_name("third-output/scores").outputs[0]
-            fourth_scores = graph.get_operation_by_name("fourth-output/scores").outputs[0]
             scores = graph.get_operation_by_name("output/scores").outputs[0]
 
             # Split the output nodes name by '|' if you have several output nodes
-            output_node_names = "first-output/scores|second-output/scores|third-output/scores|fourth-output/scores|output/scores"
+            output_node_names = "first-output/scores|second-output/scores|output/scores"
 
             # Save the .pb model file
             output_graph_def = tf.graph_util.convert_variables_to_constants(sess, sess.graph_def,
@@ -105,26 +102,23 @@ def test_harnn():
             predicted_onehot_labels = [[], [], [], [], []]
 
             for batch_test in batches:
-                x, sec, subsec, group, subgroup, y_onehot, y = zip(*batch_test)
+                x, sec, subsec, y_onehot, y = zip(*batch_test)
 
-                y_batch_test_list = [y_onehot, sec, subsec, group, subgroup]
+                y_batch_test_list = [y_onehot, sec, subsec]
 
                 feed_dict = {
                     input_x: x,
                     input_y_first: sec,
                     input_y_second: subsec,
-                    input_y_third: group,
-                    input_y_fourth: subgroup,
                     input_y: y_onehot,
                     dropout_keep_prob: 1.0,
                     alpha: args.alpha,
                     is_training: False
                 }
-                batch_global_scores, batch_first_scores, batch_second_scores, batch_third_scores, batch_fourth_scores = \
-                    sess.run([scores, first_scores, second_scores, third_scores, fourth_scores], feed_dict)
+                batch_global_scores, batch_first_scores, batch_second_scores = \
+                    sess.run([scores, first_scores, second_scores], feed_dict)
 
-                batch_scores = [batch_global_scores, batch_first_scores, batch_second_scores,
-                                batch_third_scores, batch_fourth_scores]
+                batch_scores = [batch_global_scores, batch_first_scores, batch_second_scores]
 
                 # Get the predicted labels by threshold
                 batch_predicted_labels_ts, batch_predicted_scores_ts = \

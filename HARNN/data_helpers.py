@@ -27,7 +27,8 @@ def _option(pattern):
         The OPTION.
     """
     if pattern == 0:
-        OPTION = input("[Input] Train or Restore? (T/R): ")
+        #OPTION = input("[Input] Train or Restore? (T/R): ")
+        OPTION = 'T'
         while not (OPTION.upper() in ['T', 'R']):
             OPTION = input("[Warning] The format of your input is illegal, please re-input: ")
     if pattern == 1:
@@ -296,15 +297,19 @@ def load_word2vec_matrix(word2vec_file):
     Raises:
         IOError: If word2vec model file doesn't exist.
     """
+
     if not os.path.isfile(word2vec_file):
+        print('This file does not exist')
         raise IOError("[Error] The word2vec file doesn't exist. ")
 
     wv = KeyedVectors.load(word2vec_file, mmap='r')
 
+    print(wv)
+
     word2idx = OrderedDict({"_UNK": 0})
     embedding_size = wv.vector_size
-    for k, v in wv.vocab.items():
-        word2idx[k] = v.index + 1
+    for k, v in wv.key_to_index.items():
+        word2idx[k] = v + 1
     vocab_size = len(word2idx)
 
     embedding_matrix = np.zeros([vocab_size, embedding_size])
@@ -329,6 +334,7 @@ def load_data_and_labels(args, input_file, word2idx: dict):
     Raises:
         IOError: If word2vec model file doesn't exist
     """
+
     if not input_file.endswith('.json'):
         raise IOError("[Error] The research record is not a json file. "
                       "Please preprocess the research record into the json file.")
@@ -356,8 +362,8 @@ def load_data_and_labels(args, input_file, word2idx: dict):
         Data['content'] = []
         Data['section'] = []
         Data['subsection'] = []
-        Data['group'] = []
-        Data['subgroup'] = []
+        # Data['group'] = []
+        # Data['subgroup'] = []
         Data['onehot_labels'] = []
         Data['labels'] = []
 
@@ -367,8 +373,8 @@ def load_data_and_labels(args, input_file, word2idx: dict):
             content = record['abstract']
             section = record['section']
             subsection = record['subsection']
-            group = record['group']
-            subgroup = record['subgroup']
+            #group = record['group']
+            #subgroup = record['subgroup']
             labels = record['labels']
 
             Data['id'].append(id)
@@ -376,8 +382,8 @@ def load_data_and_labels(args, input_file, word2idx: dict):
             Data['content'].append(content)
             Data['section'].append(_create_onehot_labels(section, args.num_classes_list[0]))
             Data['subsection'].append(_create_onehot_labels(subsection, args.num_classes_list[1]))
-            Data['group'].append(_create_onehot_labels(group, args.num_classes_list[2]))
-            Data['subgroup'].append(_create_onehot_labels(subgroup, args.num_classes_list[3]))
+            #Data['group'].append(_create_onehot_labels(group, args.num_classes_list[2]))
+            #Data['subgroup'].append(_create_onehot_labels(subgroup, args.num_classes_list[3]))
             Data['onehot_labels'].append(_create_onehot_labels(labels, args.total_classes))
             Data['labels'].append(labels)
         Data['pad_seqs'] = pad_sequences(Data['content_index'], maxlen=args.pad_seq_len, value=0.)

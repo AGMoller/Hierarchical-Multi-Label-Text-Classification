@@ -135,3 +135,5 @@ temp.py
 randolph/
 Icon?
 *.graffle
+
+.venv

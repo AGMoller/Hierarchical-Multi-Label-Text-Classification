@@ -10,11 +10,13 @@ sys.path.append('../')
 logging.getLogger('tensorflow').disabled = True
 
 import numpy as np
-import tensorflow as tf
+# import tensorflow as tf
+import tensorflow.compat.v1 as tf
+tf.disable_v2_behavior()
 from text_harnn import TextHARNN
-from utils import checkmate as cm
-from utils import data_helpers as dh
-from utils import param_parser as parser
+import checkmate as cm
+import data_helpers as dh
+import param_parser as parser
 from sklearn.metrics import precision_score, recall_score, f1_score, roc_auc_score, average_precision_score
 
 args = parser.parameter_parser()
@@ -23,8 +25,7 @@ logger = dh.logger_fn("tflog", "logs/{0}-{1}.log".format('Train' if OPTION == 'T
 
 
 def create_input_data(data: dict):
-    return zip(data['pad_seqs'], data['section'], data['subsection'],
-               data['group'], data['subgroup'], data['onehot_labels'])
+    return zip(data['pad_seqs'], data['section'], data['subsection'], data['onehot_labels'])
 
 
 def train_harnn():
@@ -43,11 +44,11 @@ def train_harnn():
 
     # Build a graph and harnn object
     with tf.Graph().as_default():
-        session_conf = tf.ConfigProto(
+        session_conf = tf.compat.v1.ConfigProto(
             allow_soft_placement=args.allow_soft_placement,
             log_device_placement=args.log_device_placement)
         session_conf.gpu_options.allow_growth = args.gpu_options_allow_growth
-        sess = tf.Session(config=session_conf)
+        sess = tf.compat.v1.Session(config=session_conf)
         with sess.as_default():
             harnn = TextHARNN(
                 sequence_length=args.pad_seq_len,
@@ -69,7 +70,7 @@ def train_harnn():
                                                            decay_steps=args.decay_steps,
                                                            decay_rate=args.decay_rate,
                                                            staircase=True)
-                optimizer = tf.train.AdamOptimizer(learning_rate)
+                optimizer = tf.compat.v1.train.AdamOptimizer(learning_rate)
                 grads, vars = zip(*optimizer.compute_gradients(harnn.loss))
                 grads, _ = tf.clip_by_global_norm(grads, clip_norm=args.norm_ratio)
                 train_op = optimizer.apply_gradients(zip(grads, vars), global_step=harnn.global_step, name="train_op")
@@ -127,14 +128,12 @@ def train_harnn():
 
             def train_step(batch_data):
                 """A single training step."""
-                x, sec, subsec, group, subgroup, y_onehot = zip(*batch_data)
+                x, sec, subsec, y_onehot = zip(*batch_data)
 
                 feed_dict = {
                     harnn.input_x: x,
                     harnn.input_y_first: sec,
                     harnn.input_y_second: subsec,
-                    harnn.input_y_third: group,
-                    harnn.input_y_fourth: subgroup,
                     harnn.input_y: y_onehot,
                     harnn.dropout_keep_prob: args.dropout_rate,
                     harnn.alpha: args.alpha,
@@ -161,13 +160,11 @@ def train_harnn():
                 predicted_onehot_labels_tk = [[] for _ in range(args.topK)]
 
                 for batch_validation in batches_validation:
-                    x, sec, subsec, group, subgroup, y_onehot = zip(*batch_validation)
+                    x, sec, subsec, y_onehot = zip(*batch_validation)
                     feed_dict = {
                         harnn.input_x: x,
                         harnn.input_y_first: sec,
                         harnn.input_y_second: subsec,
-                        harnn.input_y_third: group,
-                        harnn.input_y_fourth: subgroup,
                         harnn.input_y: y_onehot,
                         harnn.dropout_keep_prob: 1.0,
                         harnn.alpha: args.alpha,

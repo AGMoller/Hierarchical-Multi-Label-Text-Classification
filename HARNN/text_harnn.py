@@ -1,7 +1,9 @@
 # -*- coding:utf-8 -*-
 __author__ = 'Randolph'
 
-import tensorflow as tf
+#import tensorflow as tf
+import tensorflow.compat.v1 as tf
+tf.disable_v2_behavior()
 
 
 class TextHARNN(object):
@@ -15,8 +17,8 @@ class TextHARNN(object):
         self.input_x = tf.placeholder(tf.int32, [None, sequence_length], name="input_x")
         self.input_y_first = tf.placeholder(tf.float32, [None, num_classes_list[0]], name="input_y_first")
         self.input_y_second = tf.placeholder(tf.float32, [None, num_classes_list[1]], name="input_y_second")
-        self.input_y_third = tf.placeholder(tf.float32, [None, num_classes_list[2]], name="input_y_third")
-        self.input_y_fourth = tf.placeholder(tf.float32, [None, num_classes_list[3]], name="input_y_fourth")
+        #self.input_y_third = tf.placeholder(tf.float32, [None, num_classes_list[2]], name="input_y_third")
+        #self.input_y_fourth = tf.placeholder(tf.float32, [None, num_classes_list[3]], name="input_y_fourth")
         self.input_y = tf.placeholder(tf.float32, [None, total_classes], name="input_y")
         self.dropout_keep_prob = tf.placeholder(tf.float32, name="dropout_keep_prob")
         self.alpha = tf.placeholder(tf.float32, name="alpha")
@@ -207,27 +209,26 @@ class TextHARNN(object):
             self.second_local_fc_out, self.second_att_weight, num_classes_list[1], name="second-")
 
         # Third Level
-        self.third_att_input = tf.multiply(self.lstm_out, tf.expand_dims(self.second_visual, -1))
-        self.third_att_weight, self.third_att_out = _attention(
-            self.third_att_input, num_classes_list[2], name="third-")
-        self.third_local_input = tf.concat([self.lstm_out_pool, self.third_att_out], axis=1)
-        self.third_local_fc_out = _fc_layer(self.third_local_input, name="third-local-")
-        self.third_logits, self.third_scores, self.third_visual = _local_layer(
-            self.third_local_fc_out, self.third_att_weight, num_classes_list[2], name="third-")
+        # self.third_att_input = tf.multiply(self.lstm_out, tf.expand_dims(self.second_visual, -1))
+        # self.third_att_weight, self.third_att_out = _attention(
+        #     self.third_att_input, num_classes_list[2], name="third-")
+        # self.third_local_input = tf.concat([self.lstm_out_pool, self.third_att_out], axis=1)
+        # self.third_local_fc_out = _fc_layer(self.third_local_input, name="third-local-")
+        # self.third_logits, self.third_scores, self.third_visual = _local_layer(
+        #     self.third_local_fc_out, self.third_att_weight, num_classes_list[2], name="third-")
 
-        # Fourth Level
-        self.fourth_att_input = tf.multiply(self.lstm_out, tf.expand_dims(self.third_visual, -1))
-        self.fourth_att_weight, self.fourth_att_out = _attention(
-            self.fourth_att_input, num_classes_list[3], name="fourth-")
-        self.fourth_local_input = tf.concat([self.lstm_out_pool, self.fourth_att_out], axis=1)
-        self.fourth_local_fc_out = _fc_layer(self.fourth_local_input, name="fourth-local-")
-        self.fourth_logits, self.fourth_scores, self.fourth_visual = _local_layer(
-            self.fourth_local_fc_out, self.fourth_att_weight, num_classes_list[3], name="fourth-")
+        # # Fourth Level
+        # self.fourth_att_input = tf.multiply(self.lstm_out, tf.expand_dims(self.third_visual, -1))
+        # self.fourth_att_weight, self.fourth_att_out = _attention(
+        #     self.fourth_att_input, num_classes_list[3], name="fourth-")
+        # self.fourth_local_input = tf.concat([self.lstm_out_pool, self.fourth_att_out], axis=1)
+        # self.fourth_local_fc_out = _fc_layer(self.fourth_local_input, name="fourth-local-")
+        # self.fourth_logits, self.fourth_scores, self.fourth_visual = _local_layer(
+        #     self.fourth_local_fc_out, self.fourth_att_weight, num_classes_list[3], name="fourth-")
 
         # Concat
         # shape of ham_out: [batch_size, fc_hidden_size * 4]
-        self.ham_out = tf.concat([self.first_local_fc_out, self.second_local_fc_out,
-                                  self.third_local_fc_out, self.fourth_local_fc_out], axis=1)
+        self.ham_out = tf.concat([self.first_local_fc_out, self.second_local_fc_out], axis=1)
 
         # Fully Connected Layer
         self.fc_out = _fc_layer(self.ham_out)
@@ -250,8 +251,7 @@ class TextHARNN(object):
             self.global_scores = tf.sigmoid(self.global_logits, name="scores")
 
         with tf.name_scope("output"):
-            self.local_scores = tf.concat([self.first_scores, self.second_scores,
-                                           self.third_scores, self.fourth_scores], axis=1)
+            self.local_scores = tf.concat([self.first_scores, self.second_scores], axis=1)
             self.scores = tf.add(self.alpha * self.global_scores, (1 - self.alpha) * self.local_scores, name="scores")
 
         # Calculate mean cross-entropy loss, L2 loss
@@ -264,9 +264,9 @@ class TextHARNN(object):
             # Local Loss
             losses_1 = cal_loss(labels=self.input_y_first, logits=self.first_logits, name="first_")
             losses_2 = cal_loss(labels=self.input_y_second, logits=self.second_logits, name="second_")
-            losses_3 = cal_loss(labels=self.input_y_third, logits=self.third_logits, name="third_")
-            losses_4 = cal_loss(labels=self.input_y_fourth, logits=self.fourth_logits, name="fourth_")
-            local_losses = tf.add_n([losses_1, losses_2, losses_3, losses_4], name="local_losses")
+            # losses_3 = cal_loss(labels=self.input_y_third, logits=self.third_logits, name="third_")
+            # losses_4 = cal_loss(labels=self.input_y_fourth, logits=self.fourth_logits, name="fourth_")
+            local_losses = tf.add_n([losses_1, losses_2], name="local_losses")
 
             # Global Loss
             global_losses = cal_loss(labels=self.input_y, logits=self.global_logits, name="global_")

@@ -9,9 +9,9 @@ sys.path.append('../')
 logging.getLogger('tensorflow').disabled = True
 
 import tensorflow as tf
-from utils import checkmate as cm
-from utils import data_helpers as dh
-from utils import param_parser as parser
+import checkmate as cm
+import data_helpers as dh
+import param_parser as parser
 
 args = parser.parameter_parser()
 MODEL = dh.get_model_name()
