@@ -110,6 +110,9 @@ target/
 !/data/train_sample.json
 !/data/validation_sample.json
 !/data/test_sample.json
+!/data/train1.json
+!/data/val1.json
+!/data/test1.json
 
 # Project File
 /HMC-LMLP

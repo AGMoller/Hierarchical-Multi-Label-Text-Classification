@@ -6,6 +6,7 @@ import sys
 import time
 import logging
 import numpy as np
+from train_harnn import OPTION
 
 sys.path.append('../')
 logging.getLogger('tensorflow').disabled = True
@@ -19,7 +20,8 @@ import param_parser as parser
 from sklearn.metrics import precision_score, recall_score, f1_score, roc_auc_score, average_precision_score
 
 args = parser.parameter_parser()
-MODEL = dh.get_model_name()
+# MODEL = dh.get_model_name()
+MODEL = '1658765971'
 logger = dh.logger_fn("tflog", "logs/Test-{0}.log".format(time.asctime()))
 
 CPT_DIR = 'runs/' + MODEL + '/checkpoints/'
@@ -45,7 +47,8 @@ def test_harnn():
     test_data = dh.load_data_and_labels(args, args.test_file, word2idx)
 
     # Load harnn model
-    OPTION = dh._option(pattern=1)
+    # OPTION = dh._option(pattern=1)
+    OPTION = 'B'
     if OPTION == 'B':
         logger.info("Loading best model...")
         checkpoint_file = cm.get_best_checkpoint(BEST_CPT_DIR, select_maximum_value=True)
@@ -97,9 +100,9 @@ def test_harnn():
             predicted_scores = []
 
             # Collect for calculating metrics
-            true_onehot_labels = [[], [], [], [], []]
-            predicted_onehot_scores = [[], [], [], [], []]
-            predicted_onehot_labels = [[], [], [], [], []]
+            true_onehot_labels = [[], [], []]
+            predicted_onehot_scores = [[], [], []]
+            predicted_onehot_labels = [[], [], []]
 
             for batch_test in batches:
                 x, sec, subsec, y_onehot, y = zip(*batch_test)
