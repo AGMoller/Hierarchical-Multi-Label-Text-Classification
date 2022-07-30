@@ -298,6 +298,9 @@ def load_word2vec_matrix(word2vec_file):
         IOError: If word2vec model file doesn't exist.
     """
 
+    print(os.listdir())
+    print(word2vec_file)
+
     if not os.path.isfile(word2vec_file):
         print('This file does not exist')
         raise IOError("[Error] The word2vec file doesn't exist. ")

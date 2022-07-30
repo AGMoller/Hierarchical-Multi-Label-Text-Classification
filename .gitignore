@@ -99,7 +99,7 @@ target/
 *.txt
 *.tsv
 *.csv
-*.json
+
 *.jpg
 *.png
 *.html

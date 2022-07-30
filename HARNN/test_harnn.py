@@ -21,7 +21,7 @@ from sklearn.metrics import precision_score, recall_score, f1_score, roc_auc_sco
 
 args = parser.parameter_parser()
 # MODEL = dh.get_model_name()
-MODEL = '1658765971'
+MODEL = '1658943157'
 logger = dh.logger_fn("tflog", "logs/Test-{0}.log".format(time.asctime()))
 
 CPT_DIR = 'runs/' + MODEL + '/checkpoints/'
